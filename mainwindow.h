@@ -38,6 +38,17 @@ private:
     Ui::MainWindow *ui;
 
     QTcpSocket* socket;
+
+    float acl_x = 0.0f;
+    float acl_y = 0.0f;
+    float acl_z = 0.0f;
+
+    typedef struct {
+        int16_t x;
+        int16_t y;
+        int16_t z;
+    } acl_raw_t;
+    acl_raw_t acl_raw;
 };
 
 #endif // MAINWINDOW_H

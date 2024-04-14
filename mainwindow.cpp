@@ -40,9 +40,15 @@ void MainWindow::readSocket()
     if (socket->waitForReadyRead(10)) {
         buffer = socket->read(9);
         qDebug() << buffer;
-        emit newMessage(buffer);
-    }
 
+        memcpy(&acl_raw, buffer.constData() + 2, 6);
+
+    }
+    acl_x = (float)(acl_raw.x / 1.0e4);
+    acl_y = (float)(acl_raw.y / 1.0e4);
+    acl_z = (float)(acl_raw.z / 1.0e4);
+    QString message = QString("x: %1 y: %2 z: %3").arg(acl_x).arg(acl_y).arg(acl_z);
+    emit newMessage(message);
 }
 
 void MainWindow::discardSocket()
