@@ -20,6 +20,31 @@ MainWindow::MainWindow(QWidget *parent) :
         QMessageBox::critical(this,"QTCPClient", QString("The following error occurred: %1.").arg(socket->errorString()));
         exit(EXIT_FAILURE);
     }
+
+    // Setting up plot module
+    ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // blue line
+    ui->customplot->graph(0)->setPen(QPen(Qt::blue));
+    ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // red line
+    ui->customplot->graph(1)->setPen(QPen(Qt::red));
+    ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // red line
+    ui->customplot->graph(2)->setPen(QPen(Qt::darkGreen));
+
+    QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
+    timeTicker->setTimeFormat("%h:%m:%s");
+    ui->customplot->xAxis->setTicker(timeTicker);
+    ui->customplot->axisRect()->setupFullAxesBox();
+    ui->customplot->yAxis->setRange(-1.2, 1.2);
+
+    connect(ui->customplot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customplot->xAxis2, SLOT(setRange(QCPRange)));
+    connect(ui->customplot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customplot->yAxis2, SLOT(setRange(QCPRange)));
+
+    ui->customplot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+
+    // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
+    dataTimer = new QTimer(this);
+    connect(dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
+    dataTimer->start(15); // Interval 0 means to refresh as fast as possible
+
 }
 
 MainWindow::~MainWindow()
@@ -76,74 +101,23 @@ void MainWindow::displayError(QAbstractSocket::SocketError socketError)
     }
 }
 
-void MainWindow::on_pushButton_sendMessage_clicked()
+void MainWindow::realtimeDataSlot()
 {
-    if(socket)
+    static QTime time(QTime::currentTime());
+    // calculate two new data points:
+    double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
+    static double lastPointKey = 0;
+    if (key-lastPointKey > 0.002) // at most add point every 2 ms
     {
-        if(socket->isOpen())
-        {
-            QString str = ui->lineEdit_message->text();
-
-            QDataStream socketStream(socket);
-            socketStream.setVersion(QDataStream::Qt_5_12);
-
-            QByteArray header;
-            header.prepend(QString("fileType:message,fileName:null,fileSize:%1;").arg(str.size()).toUtf8());
-            header.resize(128);
-
-            QByteArray byteArray = str.toUtf8();
-            byteArray.prepend(header);
-
-            socketStream << byteArray;
-
-            ui->lineEdit_message->clear();
-        }
-        else
-            QMessageBox::critical(this,"QTCPClient","Socket doesn't seem to be opened");
+      // add data to lines:
+      ui->customplot->graph(0)->addData(key, acl_x);
+      ui->customplot->graph(1)->addData(key, acl_y);
+      ui->customplot->graph(2)->addData(key, acl_z);
+      lastPointKey = key;
     }
-    else
-        QMessageBox::critical(this,"QTCPClient","Not connected");
-}
-
-void MainWindow::on_pushButton_sendAttachment_clicked()
-{
-    if(socket)
-    {
-        if(socket->isOpen())
-        {
-            QString filePath = QFileDialog::getOpenFileName(this, ("Select an attachment"), QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), ("File (*.json *.txt *.png *.jpg *.jpeg)"));
-
-            if(filePath.isEmpty()){
-                QMessageBox::critical(this,"QTCPClient","You haven't selected any attachment!");
-                return;
-            }
-
-            QFile m_file(filePath);
-            if(m_file.open(QIODevice::ReadOnly)){
-
-                QFileInfo fileInfo(m_file.fileName());
-                QString fileName(fileInfo.fileName());
-
-                QDataStream socketStream(socket);
-                socketStream.setVersion(QDataStream::Qt_5_12);
-
-                QByteArray header;
-                header.prepend(QString("fileType:attachment,fileName:%1,fileSize:%2;").arg(fileName).arg(m_file.size()).toUtf8());
-                header.resize(128);
-
-                QByteArray byteArray = m_file.readAll();
-                byteArray.prepend(header);
-
-                socketStream.setVersion(QDataStream::Qt_5_12);
-                socketStream << byteArray;
-            }else
-                QMessageBox::critical(this,"QTCPClient","Attachment is not readable!");
-        }
-        else
-            QMessageBox::critical(this,"QTCPClient","Socket doesn't seem to be opened");
-    }
-    else
-        QMessageBox::critical(this,"QTCPClient","Not connected");
+    // make key axis range scroll with the data (at a constant range size of 8):
+    ui->customplot->xAxis->setRange(key, 8, Qt::AlignRight);
+    ui->customplot->replot();
 }
 
 void MainWindow::displayMessage(const QString& str)

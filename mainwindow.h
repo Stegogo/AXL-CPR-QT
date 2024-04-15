@@ -30,18 +30,19 @@ private slots:
     void readSocket();
     void discardSocket();
     void displayError(QAbstractSocket::SocketError socketError);
+    void realtimeDataSlot();
 
     void displayMessage(const QString& str);
-    void on_pushButton_sendMessage_clicked();
-    void on_pushButton_sendAttachment_clicked();
 private:
     Ui::MainWindow *ui;
 
     QTcpSocket* socket;
+    QTimer* dataTimer;
 
     float acl_x = 0.0f;
     float acl_y = 0.0f;
     float acl_z = 0.0f;
+    QVector<float> acl;
 
     typedef struct {
         int16_t x;
