@@ -48,6 +48,9 @@ MainWindow::MainWindow(QWidget *parent) :
     dataTimer = new QTimer(this);
     connect(dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
     dataTimer->start(10);
+
+    connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopTimer()));
+    connect(ui->resumeButton, SIGNAL(clicked()), this, SLOT(resumeTimer()));
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -173,4 +176,20 @@ void MainWindow::realtimeDataSlot()
 void MainWindow::displayMessage(const QString& str)
 {
     ui->textBrowser_receivedMessages->append(str);
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+// Stop button handle
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+void MainWindow::stopTimer()
+{
+    dataTimer->stop();
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+// Resume button handle
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+void MainWindow::resumeTimer()
+{
+    dataTimer->start(10);
 }

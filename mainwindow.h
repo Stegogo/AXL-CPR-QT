@@ -31,6 +31,8 @@ private slots:
     void discardSocket();
     void displayError(QAbstractSocket::SocketError socketError);
     void realtimeDataSlot();
+    void stopTimer();
+    void resumeTimer();
 
     void displayMessage(const QString& str);
 private:
