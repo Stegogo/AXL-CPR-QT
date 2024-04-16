@@ -39,10 +39,15 @@ private:
     QTcpSocket* socket;
     QTimer* dataTimer;
 
+    bool display_ax = true;
+    bool display_ay = true;
+    bool display_az = true;
+    bool display_alen = true;
+
     float acl_x = 0.0f;
     float acl_y = 0.0f;
     float acl_z = 0.0f;
-    QVector<float> acl;
+    float acl_len = 0.0f;
 
     typedef struct {
         int16_t x;
