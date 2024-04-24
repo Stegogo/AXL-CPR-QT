@@ -33,21 +33,23 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->customplot->graph(2)->setPen(QPen(Qt::darkGreen));
     ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // accelerometer vector length
     ui->customplot->graph(3)->setPen(QPen(Qt::green));
+
+
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
     ui->customplot->xAxis->setTicker(timeTicker);
     ui->customplot->axisRect()->setupFullAxesBox();
-    ui->customplot->yAxis->setRange(-1.2, 1.2);
+    ui->customplot->yAxis->setRange(-1.0, 1.0);
 
     connect(ui->customplot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customplot->xAxis2, SLOT(setRange(QCPRange)));
     connect(ui->customplot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customplot->yAxis2, SLOT(setRange(QCPRange)));
 
     ui->customplot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 
-    // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
+    // setup a timer thatr repeatedly calls MainWindow::realtimeDataSlot:
     dataTimer = new QTimer(this);
     connect(dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer->start(10);
+    dataTimer->start(0);
 
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopTimer()));
     connect(ui->resumeButton, SIGNAL(clicked()), this, SLOT(resumeTimer()));
@@ -75,15 +77,18 @@ void MainWindow::readSocket()
     socketStream.setVersion(QDataStream::Qt_5_12);
     socketStream.setByteOrder(QDataStream::LittleEndian);
 
-    buffer = socket->read(9);
+    buffer = socket->read(10);
     memcpy(&acl_raw, buffer.constData() + 2, 6);
 
     acl_x = (float)((float)acl_raw.x / 1.0e4);
     acl_y = (float)((float)acl_raw.y / 1.0e4);
     acl_z = (float)((float)acl_raw.z / 1.0e4);
     acl_len = sqrt((acl_x * acl_x) + (acl_y * acl_y) + (acl_z * acl_z));
+    cpr_good = (bool)buffer[8];
     QString message = QString("x: %1 y: %2 z: %3").arg(acl_x).arg(acl_y).arg(acl_z);
     emit newMessage(message);
+
+
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -143,10 +148,15 @@ void MainWindow::realtimeDataSlot()
     if (display_alen) {
         ui->customplot->graph(3)->setPen(QPen(Qt::green));}
     else {
-        ui->customplot->graph(3)->setPen(QPen(Qt::transparent)); }
+        ui->customplot->graph(3)->setPen(QPen(Qt::transparent));
+    }
+    if (cpr_good)
+        ui->customplot->setBackground(QColor(100, 200, 200, 100));
+    else
+        ui->customplot->setBackground(QColor(100, 200, 200, 0));
 
     //::::::::::::::::::: Add points to graphs :::::::::::::::::::::::::::
-    if (key-lastPointKey > 0.002) // at most add point every 2 ms
+    if (key-lastPointKey > 0.02) // at most add point every 2 ms
     {
       // add data to lines:
       ui->customplot->graph(0)->addData(key, acl_x);
@@ -191,5 +201,5 @@ void MainWindow::stopTimer()
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 void MainWindow::resumeTimer()
 {
-    dataTimer->start(10);
+    dataTimer->start(0);
 }

@@ -6,4 +6,7 @@
     <qresource>
         <file>icons/play.png</file>
     </qresource>
+    <qresource>
+        <file>icons/cpr.png</file>
+    </qresource>
 </RCC>

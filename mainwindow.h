@@ -45,6 +45,7 @@ private:
     bool display_ay = true;
     bool display_az = true;
     bool display_alen = true;
+    bool cpr_good = false;
 
     float acl_x = 0.0f;
     float acl_y = 0.0f;
