@@ -33,7 +33,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->customplot->graph(2)->setPen(QPen(Qt::darkGreen));
     ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // accelerometer vector length
     ui->customplot->graph(3)->setPen(QPen(Qt::green));
-
+    ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // displacement
+    ui->customplot->graph(4)->setPen(QPen(Qt::cyan));
+    ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // velocity
+    ui->customplot->graph(5)->setPen(QPen(Qt::darkBlue));
 
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
@@ -62,8 +65,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->checkBox_ay, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
     connect(ui->checkBox_az, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
     connect(ui->checkBox_alen, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
+    connect(ui->checkBox_disp, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
+    connect(ui->checkBox_vel, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
     connect(ui->showRawInput, SIGNAL(clicked()), this, SLOT(showRawInput()));
+
+    // set initial states of visibility
     ui->textBrowser_receivedMessages->setVisible(false);
+    ui->customplot->graph(3)->setVisible(false);
+    ui->customplot->graph(5)->setVisible(false);
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -83,14 +92,21 @@ MainWindow::~MainWindow()
 void MainWindow::readSocket()
 {
     QByteArray buffer;
+    uint16_t displacement_raw = 0;
+    int16_t velocity_raw = 0;
 
     buffer = socket->read(14);
     memcpy(&acl_raw, buffer.constData() + 2, 6);
+    memcpy(&displacement_raw, buffer.constData() + 8, 2);
+    memcpy(&velocity_raw, buffer.constData() + 10, 2);
 
     acl_x = (float)((float)acl_raw.x / 1.0e4);
     acl_y = (float)((float)acl_raw.y / 1.0e4);
     acl_z = (float)((float)acl_raw.z / 1.0e4);
     acl_len = sqrt((acl_x * acl_x) + (acl_y * acl_y) + (acl_z * acl_z));
+    displacement = (float)((float)displacement_raw / 1.0e6);
+    velocity = (float)((float)velocity_raw / 1.0e6);
+
     //cpr_good = (bool)buffer[8];
     QString message = QString("x: %1 y: %2 z: %3").arg(acl_x).arg(acl_y).arg(acl_z);
     emit newMessage(message);
@@ -151,6 +167,8 @@ void MainWindow::realtimeDataSlot()
       ui->customplot->graph(1)->addData(key, acl_y);
       ui->customplot->graph(2)->addData(key, acl_z);
       ui->customplot->graph(3)->addData(key, acl_len);
+      ui->customplot->graph(4)->addData(key, displacement);
+      ui->customplot->graph(5)->addData(key, velocity);
       lastPointKey = key;
     }
     // make key axis range scroll with the data (at a constant range size of 8):
@@ -211,7 +229,18 @@ void MainWindow::showWhichPlots(bool checked)
         else
             ui->customplot->graph(3)->setVisible(false);
     }
-
+    else if (QObject::sender() == ui->checkBox_disp) {
+        if (checked)
+            ui->customplot->graph(4)->setVisible(true);
+        else
+            ui->customplot->graph(4)->setVisible(false);
+    }
+    else if (QObject::sender() == ui->checkBox_vel) {
+        if (checked)
+            ui->customplot->graph(5)->setVisible(true);
+        else
+            ui->customplot->graph(5)->setVisible(false);
+    }
     ui->customplot->replot();
 }
 

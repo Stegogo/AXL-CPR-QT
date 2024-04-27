@@ -54,6 +54,9 @@ private:
     float acl_z = 0.0f;
     float acl_len = 0.0f;
 
+    float displacement;
+    float velocity;
+
     typedef struct {
         int16_t x;
         int16_t y;
