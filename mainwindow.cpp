@@ -44,15 +44,26 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->customplot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customplot->xAxis2, SLOT(setRange(QCPRange)));
     connect(ui->customplot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customplot->yAxis2, SLOT(setRange(QCPRange)));
 
-    ui->customplot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+    ui->customplot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+
+    QDataStream socketStream(socket);
+    socketStream.setVersion(QDataStream::Qt_5_12);
+    socketStream.setByteOrder(QDataStream::LittleEndian);
 
     // setup a timer thatr repeatedly calls MainWindow::realtimeDataSlot:
     dataTimer = new QTimer(this);
     connect(dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
     dataTimer->start(0);
 
+    // connect button signals/slots
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopTimer()));
     connect(ui->resumeButton, SIGNAL(clicked()), this, SLOT(resumeTimer()));
+    connect(ui->checkBox_ax, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
+    connect(ui->checkBox_ay, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
+    connect(ui->checkBox_az, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
+    connect(ui->checkBox_alen, SIGNAL(clicked(bool)), this, SLOT(showWhichPlots(bool)));
+    connect(ui->showRawInput, SIGNAL(clicked()), this, SLOT(showRawInput()));
+    ui->textBrowser_receivedMessages->setVisible(false);
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -73,21 +84,16 @@ void MainWindow::readSocket()
 {
     QByteArray buffer;
 
-    QDataStream socketStream(socket);
-    socketStream.setVersion(QDataStream::Qt_5_12);
-    socketStream.setByteOrder(QDataStream::LittleEndian);
-
-    buffer = socket->read(10);
+    buffer = socket->read(14);
     memcpy(&acl_raw, buffer.constData() + 2, 6);
 
     acl_x = (float)((float)acl_raw.x / 1.0e4);
     acl_y = (float)((float)acl_raw.y / 1.0e4);
     acl_z = (float)((float)acl_raw.z / 1.0e4);
     acl_len = sqrt((acl_x * acl_x) + (acl_y * acl_y) + (acl_z * acl_z));
-    cpr_good = (bool)buffer[8];
+    //cpr_good = (bool)buffer[8];
     QString message = QString("x: %1 y: %2 z: %3").arg(acl_x).arg(acl_y).arg(acl_z);
     emit newMessage(message);
-
 
 }
 
@@ -132,31 +138,13 @@ void MainWindow::realtimeDataSlot()
     double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
     static double lastPointKey = 0;
 
-    // Hide/Show plots
-    if (display_ax)
-        ui->customplot->graph(0)->setPen(QPen(Qt::blue));
-    else
-        ui->customplot->graph(0)->setPen(QPen(Qt::transparent));
-    if (display_ay)
-        ui->customplot->graph(1)->setPen(QPen(Qt::red));
-    else
-        ui->customplot->graph(1)->setPen(QPen(Qt::transparent));
-    if (display_az)
-        ui->customplot->graph(2)->setPen(QPen(Qt::darkGreen));
-    else
-        ui->customplot->graph(2)->setPen(QPen(Qt::transparent));
-    if (display_alen) {
-        ui->customplot->graph(3)->setPen(QPen(Qt::green));}
-    else {
-        ui->customplot->graph(3)->setPen(QPen(Qt::transparent));
-    }
     if (cpr_good)
         ui->customplot->setBackground(QColor(100, 200, 200, 100));
     else
         ui->customplot->setBackground(QColor(100, 200, 200, 0));
 
     //::::::::::::::::::: Add points to graphs :::::::::::::::::::::::::::
-    if (key-lastPointKey > 0.02) // at most add point every 2 ms
+    if (key-lastPointKey > 0.01) // at most add point every 2 ms
     {
       // add data to lines:
       ui->customplot->graph(0)->addData(key, acl_x);
@@ -168,16 +156,6 @@ void MainWindow::realtimeDataSlot()
     // make key axis range scroll with the data (at a constant range size of 8):
     ui->customplot->xAxis->setRange(key, 8, Qt::AlignRight);
     ui->customplot->replot();
-
-    // update selected plots list if needed
-    if (ui->checkBox_ax->isChecked()) display_ax = true;
-    else if (!(ui->checkBox_ax->isChecked())) display_ax = false;
-    if (ui->checkBox_ay->isChecked()) display_ay = true;
-    else if (!(ui->checkBox_ay->isChecked())) display_ay = false;
-    if (ui->checkBox_az->isChecked()) display_az = true;
-    else if (!(ui->checkBox_az->isChecked())) display_az = false;
-    if (ui->checkBox_alen->isChecked()) display_alen = true;
-    else if (!(ui->checkBox_alen->isChecked())) display_alen = false;
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -202,4 +180,48 @@ void MainWindow::stopTimer()
 void MainWindow::resumeTimer()
 {
     dataTimer->start(0);
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+// Hide/Show plots
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+void MainWindow::showWhichPlots(bool checked)
+{
+    if (QObject::sender() == ui->checkBox_ax) {
+        if (checked)
+            ui->customplot->graph(0)->setVisible(true);
+        else
+            ui->customplot->graph(0)->setVisible(false);
+    }
+    else if (QObject::sender() == ui->checkBox_ay) {
+        if (checked)
+            ui->customplot->graph(1)->setVisible(true);
+        else
+            ui->customplot->graph(1)->setVisible(false);
+    }
+    else if (QObject::sender() == ui->checkBox_az) {
+        if (checked)
+            ui->customplot->graph(2)->setVisible(true);
+        else
+            ui->customplot->graph(2)->setVisible(false);
+    }
+    else if (QObject::sender() == ui->checkBox_alen) {
+        if (checked)
+            ui->customplot->graph(3)->setVisible(true);
+        else
+            ui->customplot->graph(3)->setVisible(false);
+    }
+
+    ui->customplot->replot();
+}
+
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+// Hide/Show raw values for x y z axes
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+void MainWindow::showRawInput()
+{
+    if (!ui->textBrowser_receivedMessages->isVisible())
+        ui->textBrowser_receivedMessages->setVisible(true);
+    else if (ui->textBrowser_receivedMessages->isVisible())
+        ui->textBrowser_receivedMessages->setVisible(false);
 }

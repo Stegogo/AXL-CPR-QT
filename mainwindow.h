@@ -33,6 +33,8 @@ private slots:
     void realtimeDataSlot();
     void stopTimer();
     void resumeTimer();
+    void showWhichPlots(bool);
+    void showRawInput();
 
     void displayMessage(const QString& str);
 private:
