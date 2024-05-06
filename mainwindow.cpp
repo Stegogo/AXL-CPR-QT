@@ -160,6 +160,22 @@ void MainWindow::realtimeDataSlot()
     double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
     static double lastPointKey = 0;
 
+    // change background color based on tap count
+    switch (tap_count) {
+//        case 1: // enable bg color representing tap count = 1
+//            ui->customplot->graph(1)->setPen(QPen(Qt::blue));
+//            ui->customplot->graph(7)->setPen(QPen(Qt::transparent));
+//        break;
+//        case 2: // enable bg color representing tap count = 2
+//            ui->customplot->graph(7)->setPen(QPen(Qt::green));
+//            ui->customplot->graph(6)->setPen(QPen(Qt::transparent));
+//        break;
+//        default: // disable both bg
+//            ui->customplot->graph(6)->setPen(QPen(Qt::transparent));
+//            ui->customplot->graph(7)->setPen(QPen(Qt::transparent));
+//        break;
+    }
+
     //::::::::::::::::::: Add points to graphs :::::::::::::::::::::::::::
     if (key-lastPointKey > 0.01) // at most add point every 1 ms
     {
@@ -170,7 +186,9 @@ void MainWindow::realtimeDataSlot()
       ui->customplot->graph(3)->addData(key, acl_len);
       ui->customplot->graph(4)->addData(key, displacement);
       ui->customplot->graph(5)->addData(key, velocity);
-      ui->customplot->graph(6)->addData(key, 5);
+      if (tap_count == 1) {
+          ui->customplot->graph(6)->addData(key, 5);
+      }
       ui->customplot->graph(7)->addData(key, 5);
       lastPointKey = key;
     }
@@ -183,21 +201,6 @@ void MainWindow::realtimeDataSlot()
 
     // make key axis range scroll with the data (at a constant range size of 8):
     ui->customplot->xAxis->setRange(key, 8, Qt::AlignRight);
-    // change background color based on tap count
-    switch (tap_count) {
-        case 1: // enable bg color representing tap count = 1
-            ui->customplot->graph(6)->setPen(QPen(Qt::blue));
-            ui->customplot->graph(7)->setPen(QPen(Qt::transparent));
-        break;
-        case 2: // enable bg color representing tap count = 2
-            ui->customplot->graph(7)->setPen(QPen(Qt::green));
-            ui->customplot->graph(6)->setPen(QPen(Qt::transparent));
-        break;
-        default: // disable both bg
-            ui->customplot->graph(6)->setPen(QPen(Qt::transparent));
-            ui->customplot->graph(7)->setPen(QPen(Qt::transparent));
-        break;
-    }
 
     static double perSecondKey;
     static double perMinuteKey;
