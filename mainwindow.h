@@ -38,6 +38,8 @@ private slots:
 
     void displayMessage(const QString& str);
 private:
+    char calculateChecksum(const QByteArray &b);
+
     Ui::MainWindow *ui;
 
     QTcpSocket* socket;
@@ -47,7 +49,6 @@ private:
     bool display_ay = true;
     bool display_az = true;
     bool display_alen = true;
-    bool cpr_good = false;
 
     float acl_x = 0.0f;
     float acl_y = 0.0f;
@@ -56,6 +57,9 @@ private:
 
     float displacement;
     float velocity;
+
+    uint8_t tap_count = 0;
+    uint8_t inner_tap_count = 0;
 
     typedef struct {
         int16_t x;
