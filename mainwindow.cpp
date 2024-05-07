@@ -36,11 +36,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->customplot->graph(5)->setPen(QPen(Qt::darkBlue));
 
     ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // Hidden graph; Represents tap count = 1
-    ui->customplot->graph(6)->setPen(QPen(Qt::blue));
-    //ui->customplot->graph(6)->setBrush(QBrush(QColor(147, 175, 250, 100)));
+    ui->customplot->graph(6)->setPen(QPen(Qt::transparent));
+    ui->customplot->graph(6)->setBrush(QBrush(QColor(147, 175, 250, 100)));
     ui->customplot->addGraph(ui->customplot->xAxis, ui->customplot->yAxis); // Hidden graph; Represents tap count = 2
-    ui->customplot->graph(7)->setPen(QPen(Qt::green));
-    //ui->customplot->graph(7)->setBrush(QBrush(QColor(147, 250, 194, 100)));
+    ui->customplot->graph(7)->setPen(QPen(Qt::transparent));
+    ui->customplot->graph(7)->setBrush(QBrush(QColor(147, 250, 194, 100)));
 
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
@@ -60,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // setup a timer thatr repeatedly calls MainWindow::realtimeDataSlot:
     dataTimer = new QTimer(this);
     connect(dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer->start(0);
+    dataTimer->start(10);
 
     // connect button signals/slots
     connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopTimer()));
@@ -99,21 +99,25 @@ void MainWindow::readSocket()
 
     uint16_t displacement_raw = 0;
     int16_t velocity_raw = 0;
-    socket_buffer = socket->readAll();//socket->read(8);
+    socket_buffer = socket->readAll();
+    //qDebug() << socket_buffer;
     QList<QByteArray> tempList = socket_buffer.split('\xAA');           // Split based on 1st header
     tempList.removeFirst();
     if (!tempList.isEmpty() && tempList[0].front() == '\x86') {         // If 2nd header present - packet is likely ok
-        if (tempList[0].back() == calculateChecksum(tempList[0])) {     // If checksum is correct - packet 100% ok
-         memcpy(&acl_raw, socket_buffer.constData() + 2, 6);
-         memcpy(&displacement_raw, socket_buffer.constData() + 8, 2);
-         memcpy(&tap_count, socket_buffer.constData() + 12, 1);
-         acl_x = (float)((float)acl_raw.x / 1.0e4);
-         acl_y = (float)((float)acl_raw.y / 1.0e4);
-         acl_z = (float)((float)acl_raw.z / 1.0e4);
-         acl_len = sqrt((acl_x * acl_x) + (acl_y * acl_y) + (acl_z * acl_z));
-         displacement = (float)((float)displacement_raw / 1.0e6);
-         velocity = (float)((float)velocity_raw / 1.0e6);
-       }
+        if (tempList[0].length() == 13) {
+            if (tempList[0].back() == calculateChecksum(tempList[0])) {     // If checksum is correct - packet 100% ok
+                memcpy(&acl_raw, tempList[0].data() + 1, 6);
+                memcpy(&displacement_raw, tempList[0].data() + 7, 2);
+                memcpy(&velocity_raw, tempList[0].data() + 9, 2);
+                memcpy(&tap_count, tempList[0].data() + 11, 1);
+                acl_x = ((float)acl_raw.x / 1.0e4);
+                acl_y = ((float)acl_raw.y / 1.0e4);
+                acl_z = ((float)acl_raw.z / 1.0e4);
+                acl_len = sqrt((acl_x * acl_x) + (acl_y * acl_y) + (acl_z * acl_z));
+                displacement = (float)((float)displacement_raw / 1.0e6);
+                velocity = (float)((float)velocity_raw / 1.0e6);
+            }
+        }
     }
 
     socket_buffer.clear();
@@ -186,18 +190,22 @@ void MainWindow::realtimeDataSlot()
       ui->customplot->graph(3)->addData(key, acl_len);
       ui->customplot->graph(4)->addData(key, displacement);
       ui->customplot->graph(5)->addData(key, velocity);
-      if (tap_count == 1) {
+      switch (tap_count) {
+      case 1:
           ui->customplot->graph(6)->addData(key, 5);
+          ui->customplot->graph(7)->addData(key, 0);
+          break;
+      case 2:
+          ui->customplot->graph(7)->addData(key, 5);
+          ui->customplot->graph(6)->addData(key, 0);
+          break;
+      default:
+          ui->customplot->graph(6)->addData(key, 0);
+          ui->customplot->graph(7)->addData(key, 0);
+          break;
       }
-      ui->customplot->graph(7)->addData(key, 5);
       lastPointKey = key;
     }
-    QCPBars *bars1 = new QCPBars(ui->customplot->xAxis, ui->customplot->yAxis);
-    bars1->setWidth(.5);
-//    bars1->setData(QVector<double>(key, key + 8), QVector<double>(5.0, 5.0));
-    bars1->setPen(Qt::NoPen);
-    bars1->setBrush(QColor(10, 140, 70, 160));
-    ui->customplot->setBackground(QColor(200, 200, 200, 20));
 
     // make key axis range scroll with the data (at a constant range size of 8):
     ui->customplot->xAxis->setRange(key, 8, Qt::AlignRight);
@@ -205,13 +213,12 @@ void MainWindow::realtimeDataSlot()
     static double perSecondKey;
     static double perMinuteKey;
     ui->label->setText(QString("Tap/Second: %1").arg(tap_count));
-    if (key - perSecondKey >= 1)     // how many taps we made for this second
-    {
-      inner_tap_count = inner_tap_count + tap_count;
-      perSecondKey = key;
+
+    if (key - perSecondKey >= 1) {     // how many taps we made for this second
+        inner_tap_count = inner_tap_count + tap_count;
+        perSecondKey = key;
     }
-    if (key - perMinuteKey > 15)    // every 15 seconds we can estimate taps per minute
-    {
+    if (key - perMinuteKey > 15) {   // every 15 seconds we can estimate taps per minute
       ui->label_2->setText(QString("Tap/Minute: %1").arg(inner_tap_count * 4));
       inner_tap_count = 0;
       perMinuteKey = key;
@@ -242,7 +249,7 @@ void MainWindow::stopTimer()
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 void MainWindow::resumeTimer()
 {
-    dataTimer->start(0);
+    dataTimer->start(10);
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
