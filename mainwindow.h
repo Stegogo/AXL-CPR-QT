@@ -59,6 +59,7 @@ private:
     float velocity;
 
     uint8_t tap_count = 0;
+    bool cpr_good = false;
     uint8_t inner_tap_count = 0;
 
     typedef struct {

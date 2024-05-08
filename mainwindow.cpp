@@ -104,12 +104,14 @@ void MainWindow::readSocket()
     QList<QByteArray> tempList = socket_buffer.split('\xAA');           // Split based on 1st header
     tempList.removeFirst();
     if (!tempList.isEmpty() && tempList[0].front() == '\x86') {         // If 2nd header present - packet is likely ok
-        if (tempList[0].length() == 13) {
+        if (tempList[0].length() == 14) {
             if (tempList[0].back() == calculateChecksum(tempList[0])) {     // If checksum is correct - packet 100% ok
                 memcpy(&acl_raw, tempList[0].data() + 1, 6);
                 memcpy(&displacement_raw, tempList[0].data() + 7, 2);
                 memcpy(&velocity_raw, tempList[0].data() + 9, 2);
                 memcpy(&tap_count, tempList[0].data() + 11, 1);
+                memcpy(&cpr_good, tempList[0].data() + 12, 1);
+
                 acl_x = ((float)acl_raw.x / 1.0e4);
                 acl_y = ((float)acl_raw.y / 1.0e4);
                 acl_z = ((float)acl_raw.z / 1.0e4);
@@ -164,22 +166,6 @@ void MainWindow::realtimeDataSlot()
     double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
     static double lastPointKey = 0;
 
-    // change background color based on tap count
-    switch (tap_count) {
-//        case 1: // enable bg color representing tap count = 1
-//            ui->customplot->graph(1)->setPen(QPen(Qt::blue));
-//            ui->customplot->graph(7)->setPen(QPen(Qt::transparent));
-//        break;
-//        case 2: // enable bg color representing tap count = 2
-//            ui->customplot->graph(7)->setPen(QPen(Qt::green));
-//            ui->customplot->graph(6)->setPen(QPen(Qt::transparent));
-//        break;
-//        default: // disable both bg
-//            ui->customplot->graph(6)->setPen(QPen(Qt::transparent));
-//            ui->customplot->graph(7)->setPen(QPen(Qt::transparent));
-//        break;
-    }
-
     //::::::::::::::::::: Add points to graphs :::::::::::::::::::::::::::
     if (key-lastPointKey > 0.01) // at most add point every 1 ms
     {
@@ -213,6 +199,12 @@ void MainWindow::realtimeDataSlot()
     static double perSecondKey;
     static double perMinuteKey;
     ui->label->setText(QString("Tap/Second: %1").arg(tap_count));
+
+    if (cpr_good) {
+        ui->heart->setEnabled(true);
+    } else {
+        ui->heart->setEnabled(false);
+    }
 
     if (key - perSecondKey >= 1) {     // how many taps we made for this second
         inner_tap_count = inner_tap_count + tap_count;

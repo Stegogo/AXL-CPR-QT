@@ -18,6 +18,26 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QTextBrowser" name="textBrowser_receivedMessages">
+        <property name="maximumSize">
+         <size>
+          <width>250</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCustomplot" name="customplot" native="true"/>
+      </item>
+     </layout>
+    </item>
     <item row="2" column="0">
      <widget class="QLabel" name="label_2">
       <property name="text">
@@ -33,30 +53,65 @@
       <property name="spacing">
        <number>3</number>
       </property>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="checkBox_ay">
-        <property name="maximumSize">
+      <item row="8" column="1">
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
          <size>
-          <width>16777215</width>
-          <height>70</height>
+          <width>20</width>
+          <height>40</height>
          </size>
         </property>
+       </spacer>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="checkBox_disp">
         <property name="text">
-         <string>ay</string>
+         <string>disp</string>
         </property>
         <property name="checked">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="7" column="0">
-       <widget class="QCheckBox" name="checkBox_vel">
+      <item row="9" column="1">
+       <widget class="QPushButton" name="heart">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>60</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">qproperty-icon: url(&quot;:/icons/heart.png&quot;) off,
+                url(&quot;:/icons/heart.png&quot;) on ;
+border-radius:50px;
+</string>
+        </property>
         <property name="text">
-         <string>vel</string>
+         <string/>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>60</width>
+          <height>40</height>
+         </size>
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
+      <item row="11" column="1">
+       <widget class="QPushButton" name="showRawInput">
+        <property name="text">
+         <string>Raw Input</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
        <widget class="QCheckBox" name="checkBox_ax">
         <property name="maximumSize">
          <size>
@@ -72,37 +127,23 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="checkBox_ay">
+        <property name="maximumSize">
          <size>
-          <width>20</width>
-          <height>40</height>
+          <width>16777215</width>
+          <height>70</height>
          </size>
         </property>
-       </spacer>
-      </item>
-      <item row="9" column="0">
-       <widget class="QPushButton" name="showRawInput">
         <property name="text">
-         <string>Raw Input</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QCheckBox" name="checkBox_disp">
-        <property name="text">
-         <string>disp</string>
+         <string>ay</string>
         </property>
         <property name="checked">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="10" column="0">
+      <item row="12" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QPushButton" name="stopButton">
@@ -156,23 +197,7 @@ border-radius:50px;
         </item>
        </layout>
       </item>
-      <item row="3" column="0">
-       <widget class="QCheckBox" name="checkBox_alen">
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>70</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>|a|</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
+      <item row="2" column="1">
        <widget class="QCheckBox" name="checkBox_az">
         <property name="maximumSize">
          <size>
@@ -188,25 +213,41 @@ border-radius:50px;
         </property>
        </widget>
       </item>
-     </layout>
-    </item>
-    <item row="0" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QTextBrowser" name="textBrowser_receivedMessages">
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="checkBox_alen">
         <property name="maximumSize">
          <size>
-          <width>250</width>
-          <height>16777215</height>
+          <width>16777215</width>
+          <height>70</height>
          </size>
         </property>
-        <property name="styleSheet">
-         <string notr="true"/>
+        <property name="text">
+         <string>|a|</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QCustomplot" name="customplot" native="true"/>
+      <item row="7" column="1">
+       <widget class="QCheckBox" name="checkBox_vel">
+        <property name="text">
+         <string>vel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </item>

@@ -9,4 +9,7 @@
     <qresource>
         <file>icons/cpr.png</file>
     </qresource>
+    <qresource>
+        <file>icons/heart.png</file>
+    </qresource>
 </RCC>
