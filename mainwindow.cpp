@@ -114,8 +114,8 @@ void MainWindow::readSocket()
                 acl_y = ((float)acl_raw.y / 1.0e4);
                 acl_z = ((float)acl_raw.z / 1.0e4);
                 acl_len = sqrt((acl_x * acl_x) + (acl_y * acl_y) + (acl_z * acl_z));
-                displacement = (float)((float)displacement_raw / 1.0e6);
-                velocity = (float)((float)velocity_raw / 1.0e6);
+                displacement = (float)((float)displacement_raw / 1.0e4);
+                velocity = (float)((float)velocity_raw / 1.0e4);
             }
         }
     }
